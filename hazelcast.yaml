@@ -1,0 +1,5 @@
+hazelcast:
+  license-key: PLATFORM#10Nodes#174PNhiQfKRGaADwLY8FyEZbWMC6ksvBIjqXJ3dUHgtO0u52zcp22000001070001011211010000910010101101900300011930400
+
+  cp-subsystem:
+    cp-member-count: 3
