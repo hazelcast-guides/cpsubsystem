@@ -33,11 +33,12 @@ Before starting this tutorial, make sure that you have installed the following:
 
 == Step 1. Examine the CP Subsystem
 
-In this section, you'll launch a three-node Hazelcast cluster and Management Center using Docker. You'll verify that the CP Subsystem is up and ready for data.
+In this section, you'll launch a three-node Hazelcast cluster and Management Center using Docker. You'll verify that the CP Subsystem is up and ready for data. You'll then pause, then restart a cluster member and observe the changes in Management Center and view the system logs.
 
 . Download the repository from https://github.com/hazelcast-guides/cpsubsystem[GitHub].
 
 . Run the following commands to start a Hazelcast cluster
++
 ```cli
 docker compose up -d
 docker compose ps
@@ -50,21 +51,35 @@ image::docker_compose_ps1.png[]
 +
 image::mc_main_dashboard.png[]
 
-. From the left side menu, go to *CP Subsystem > Dashboard*. This is where you can perform CP Subsystem management.
+. From the left side menu, go to *CP Subsystem > Dashboard*. This is where you can perform CP Subsystem management if necessary. 
 +
 [NOTE]
-The CP Subsystem requires manual intervention while expanding or shrinking its size, or when a CP member crashes or becomes unreachable. When a CP member becomes unreachable, it is not automatically removed from CP Subsystem because it could still be active and partitioned away.
+The CP Subsystem only requires manual intervention while expanding or shrinking its size, or when a CP member crashes or becomes unreachable. When a CP member becomes unreachable, it is not automatically removed from CP Subsystem because it could still be active and partitioned away. 
 +
 . In the terminal window, list the cluster members. Select one to pause via Docker. Observe the change in status in the dashboard.
++
+image::docker_list_pause.png[]
++
+image::dashboard_paused_member.png[]
+
+. Review the log entries of one of the remaining members to see messages related to data migration for both AP and CP data. The command is `docker logs <container>`.
++
+Example output:
+image::member_depart_log.png[]
+
+. Unpause the paused cluster member. Observe the changes in Management Center. View the logs on both the returning member and the existing members.
 
 
+== Step 2. Create a CPMap
 
+In this step, you'll use the CLC to connect to one of the cluster members. You'll create a CPMap and add data to the map. You'll then retrieve data from the map. 
 
-== Step 2. <Step Title>
+. Start CLC using the provided configuration file.
++
+```cli
+clc -c clc_docker.yaml
+```
 
-////
-Continue the design approach you chose in the previous part and continue it through to the end of the tutorial.
-////
 
 == Summary
 
