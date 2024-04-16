@@ -29,11 +29,16 @@ Before starting this tutorial, make sure that you have installed the following:
 * https://docs.hazelcast.com/clc/latest/overview[Hazelcast Command Line Client (CLC)]
 * https://www.oracle.com/java/technologies/downloads/[JDK 17 or later]
 * https://www.docker.com/products/docker-desktop/[Docker Desktop]
+
+Optional
+
+* https://maven.apache.org/[Maven]
+
 * Your preferred Java IDE
 
-== Step 1. Examine the CP Subsystem
+== Step 1. Set up the Cluster and Verify Operations
 
-In this section, you'll launch a three-node Hazelcast cluster and Management Center using Docker. You'll verify that the CP Subsystem is up and ready for data. You'll then pause, then restart a cluster member and observe the changes in Management Center and view the system logs.
+In this section, you'll launch a Hazelcast cluster and Management Center using Docker. You'll verify that the CP Subsystem is up and ready for data. You'll then pause, then restart a cluster member and observe the changes in Management Center and view the system logs.
 
 . Download the repository from https://github.com/hazelcast-guides/cpsubsystem[GitHub].
 
@@ -43,20 +48,38 @@ In this section, you'll launch a three-node Hazelcast cluster and Management Cen
 docker compose up -d
 docker compose ps
 ```
-You should see four services up and running: three instances of Hazelcast, and one instance of Management Center. 
-+
-image::docker_compose_ps1.png[]
+You should see five services up and running: four instances of Hazelcast, and one instance of Management Center. 
 
-. Open a web browser and connect to *localhost:8080*. This will open Management Center. Select Dev Mode to open the main dashboard. You should see that the CP Subsystem is available. 
+. Open the file `hazelcast.yaml` to review the cluster member configuration. We've set up the following:
++
+[cols="1,1"]
+|===
+|`cp-member-count: 4`
+|All four members must be running to start the CP Subsystem. 
+
+|`group-size: 3`
+|Each group will include 3 members. 
+
+|`persistence-enabled: true`
+| Persistence is NOT enabled - this parameter is commented out. We will discuss further in Step 3 of this tutorial.
+
+|`session-time-to-live-seconds: 60`
+| 
+|===
+
+. Open a web browser and connect to *localhost:8080*. This will open Management Center. Select Dev Mode to open the main dashboard. Go to *Settings*, then open *License*. Paste in the license key from `hazelcast.yaml`. Verify that the license includes Advanced CP, which is required for CPMap functionality. 
++
+image::licensed_features.png[]
+
+. Close the settings screen. The main dashboard should show that the CP Subsystem is accessible. 
 +
 image::mc_main_dashboard.png[]
 
-. From the left side menu, go to *CP Subsystem > Dashboard*. This is where you can perform CP Subsystem management if necessary. 
+. Scroll down to verify that the cluster has a total of four nodes.
+
+. From the left side menu, go to *CP Subsystem > Dashboard*. Note that the CP Subsystem only has three nodes. Thi
 +
-[NOTE]
-The CP Subsystem only requires manual intervention while expanding or shrinking its size, or when a CP member crashes or becomes unreachable. When a CP member becomes unreachable, it is not automatically removed from CP Subsystem because it could still be active and partitioned away. 
-+
-. In the terminal window, list the cluster members. Select one to pause via Docker. Observe the change in status in the dashboard.
+. In the terminal window, list the cluster members. Select one to pause via Docker. Observe the change in status in the dashboard. Note that it takes some time for the heartbeats to fail and the status to change.
 +
 image::docker_list_pause.png[]
 +
@@ -65,21 +88,139 @@ image::dashboard_paused_member.png[]
 . Review the log entries of one of the remaining members to see messages related to data migration for both AP and CP data. The command is `docker logs <container>`.
 +
 Example output:
++
 image::member_depart_log.png[]
 
 . Unpause the paused cluster member. Observe the changes in Management Center. View the logs on both the returning member and the existing members.
 
 
-== Step 2. Create a CPMap
+== Step 2. Create a CPMap Using CLC
 
 In this step, you'll use the CLC to connect to one of the cluster members. You'll create a CPMap and add data to the map. You'll then retrieve data from the map. 
+
+. Open a separate terminal window. Enable CPMap capabilities in CLC (only needed for CLC 5.3.7). 
++
+```cli
+export CLC_EXPERIMENTAL_CPMAP=1
+```
 
 . Start CLC using the provided configuration file.
 +
 ```cli
 clc -c clc_docker.yaml
 ```
+. At the SQL prompt, use the `cpmap` commands to create a CPMap and add data, then retrieve the data.
++
+```cli
+\cpmap -n trektos set 1 "James Kirk"
+\cpmap -n trektos get 1
+```
++
+[NOTE]
+The backslash is needed for all CLC commands. Otherwise CLC assumes you are entering SQL commands. Type `\help` for a list of all available commands.
 
+. Run the `trektos.clc` script to add data to the CPMap.
++
+```cli
+\script run trektos.clc
+```
+
+. Verify that additional entries have been added to the map.
++
+```cli
+\cpmap -n trektos get 6
+```
+
+. In Management Center, examine the CP Subsystem dashboard. Note that there is now a "default" group. This is the group maintaining the RAFT algorithm for the `trektos` CPMap. 
+
+. In Management Center, select CPMaps from the left side. The screen lists the CPMap you just created, along with map statistics. 
+
+. (Optional) In the Client subdirectory, we've included a sample Java client that creates an additional CPMap. To run the client, change to the Client subdirectory, then run the following Maven commands. 
++
+```cli
+mvn clean compile exec:java -Dexec.mainClass="Client4CP"
+```
++
+Use CLC and Management Center to verify the creation of a second CPMap. 
+
+== Step 3. CP Failure and Recovery
+
+In this section, you will pause and restart individual cluster members to simulate network partition and member failure conditions. You'll learn about when the CP Subsystem can heal itself, and when administrator intervention is required.
+
+. From the CLC, run the script sw.clc. This creates an IMap. We will use this to compare data accessibility between an AP IMap and a CP CPMap. 
++
+```cli
+\script run sw.clc
+```
+
+. Retrieve an entry from the IMap.
++
+```cli
+\map -n starwars get 1
+```
+
+. In the Docker terminal window, use Docker commands to retrieve the internal IP addresses of the first Hazelcast cluster member.
++
+```cli
+docker container inspect cpsubsystem-hz1-1 | grep "IP Address"
+```
++
+Repeat this step for all four cluster members.
+
+. In Management Center, go to the CP Subsystem dashboard. Note which cluster members are participating in the CP Subsytem.
++
+image::cpsub_stats_1.png[]
+
+. Under CP Groups, open up the default group to see which member is the RAFT leader.
++
+image::raft_leader.png[]
+
+. In the terminal window, use Docker to stop one of the follower cluster members. Observe the status change in the Management Center dashboard.
++
+```cli
+docker stop cpsubsystem-hz2-1
+```
++
+[NOTE]
+The stopped system will not appear in the CP Subsystem Stats list, but will still appear in the CP Group. This is by design; a node retains its group membership unless it is removed from the CP Subsystem.
+
+. Using CLC, verify that you can still access both IMap and CPMap data.
++
+```cli
+\map -n starwars get 1
+\cpmap -n trektos get 1
+```
+
+. Restart the stopped system. Observe the status change in the Management Center dashboard. The overall status still shows that a minority is unavailable. The member reappears in the CP Subsystem stats, but the number of nodes is now 0, meaning it is not participating in any groups. This is by design; we do not have persistence configured for the CP Subsystem. A group member cannot return to full functionality without persistence enabled. 
++ 
+[NOTE]
+Yes, you should enable persistence in production. The configuration is included in the hazelcast.yaml file in this repo, but is commented out.
+
+Even with persistence enabled, the following manual removal process is needed if the server restart fails, or if the persistence read fails. 
+
+. To recover, we need to remove the member from the CP Subsystem. For this to occur safely, the member has to be unreachable. The easiest way to do this is to stop the container again. 
+
+. Once the member disappears from the CP Subsystem Stats list, use the *Remove Member* button to remove the failed member. Note the warning in Management Center; removing a reachable member results in unpredictable behavior. 
+
+[NOTE]
+By default, unreachable CP members are automatically removed from the CP Subsystem after 4 hours and replaced with other available CP members.
+
+. To bring the CP group back up to the full complement of three members, we have to promote another CP-enabled cluster member. Use the *Promote Member* button to bring up a list of available members.
+
+[NOTE]
+If no member is available, your CP Subsytem will continue to operate, but group majority counts will be adjusted if necessary. In the case of our lab, we are down to two active members. 
+
+. Stop a second CP Subsystem member. Again, observe the changes in Management Center.
+
+. Using CLC, try to retrieve data from both the IMap and the CPMap. 
+
+
+
+
+This is where you can perform CP Subsystem management if necessary. 
++
+[NOTE]
+The CP Subsystem only requires manual intervention while expanding or shrinking its size, or when a CP member crashes or becomes unreachable. When a CP member becomes unreachable, it is not automatically removed from CP Subsystem because it could still be active and partitioned away. 
 
 == Summary
 
@@ -95,3 +236,4 @@ Summarise what knowledge the reader has gained by completing the tutorial, inclu
 * Hazelcast Training: https://training.hazelcast.com/cp-subsystem[The CP Subsystem]
 * https://docs.hazelcast.com/hazelcast/latest/cp-subsystem/cp-subsystem[CP Subsystem Overview]
 * https://docs.hazelcast.com/hazelcast/latest/data-structures/cpmap[CPMap Documentation]
+* https://docs.hazelcast.com/hazelcast/5.4-snapshot/cp-subsystem/cp-subsystem#persistence[CP Subsystem Persistence]

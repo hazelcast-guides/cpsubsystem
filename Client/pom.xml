@@ -14,11 +14,25 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>private-repository</id>
+            <name>Hazelcast Private Repository</name>
+            <url>https://repository.hazelcast.com/release/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast</artifactId>
-            <version>5.4.0-BETA-2</version>
+            <artifactId>hazelcast-enterprise</artifactId>
+            <version>5.4.0</version>
         </dependency>
     </dependencies>
 

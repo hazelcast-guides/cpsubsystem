@@ -1,6 +1,10 @@
 hazelcast:
-#  license-key: PLATFORM#10Nodes#174PNhiQfKRGaADwLY8FyEZbWMC6ksvBIjqXJ3dUHgtO0u52zcp22000001070001011211010000910010101101900300011930400
-#  license-key: AllFeatures#10Nodes#saAjI2gM7ZfyNcFWR15uiPvX06CGBhYw3JzLb8ODkE4dqQUHptK79161011111199091200610091000290141190119000000319011
-  license-key: V6_UNLIMITED_LICENSE_WITH_ADVANCED_CP#9999Nodes#gXAGD4aFtMYHPOz3ybUjJuvd2WhcK7wp6ENf0I1CLiQsBkq5Z8R19991110901199100190190910110199099000091199110019010
+  license-key: AllFeatures#10Nodes#saAjI2gM7ZfyNcFWR15uiPvX06CGBhYw3JzLb8ODkE4dqQUHptK79161011111199091200610091000290141190119000000319011
   cp-subsystem:
-    cp-member-count: 3
+    cp-member-count: 4
+    group-size: 3
+#    persistence-enabled: true 
+    session-time-to-live-seconds: 60
+    missing-cp-member-auto-removal-seconds: 60
+  management-center:
+    console-enabled: true
