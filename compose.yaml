@@ -22,15 +22,8 @@ services:
     volumes:
       - ".:/project"
 
-  hz4:
-    image: hazelcast/hazelcast-enterprise:5.4.0
-    environment:
-      JAVA_OPTS: -Dhazelcast.config=/project/hazelcast.yaml
-    volumes:
-      - ".:/project"
-
   mc:
-    image: hazelcast/management-center:5.4.0-BETA-2
+    image: hazelcast/management-center:5.4.0
     environment:
       MC_DEFAULT_CLUSTER: dev
       MC_DEFAULT_CLUSTER_MEMBERS: hz1, hz2, hz3

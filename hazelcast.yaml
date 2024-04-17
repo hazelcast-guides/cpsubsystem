@@ -1,10 +1,7 @@
 hazelcast:
   license-key: AllFeatures#10Nodes#saAjI2gM7ZfyNcFWR15uiPvX06CGBhYw3JzLb8ODkE4dqQUHptK79161011111199091200610091000290141190119000000319011
   cp-subsystem:
-    cp-member-count: 4
+    cp-member-count: 3
     group-size: 3
-#    persistence-enabled: true 
-    session-time-to-live-seconds: 60
-    missing-cp-member-auto-removal-seconds: 60
   management-center:
     console-enabled: true
