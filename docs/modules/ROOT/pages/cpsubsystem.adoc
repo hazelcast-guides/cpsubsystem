@@ -6,12 +6,12 @@ Make sure to rename this file to the name of your repository and add the filenam
 = CP Subsystem and CPMap Tutorial
 // Add required variables
 :page-layout: tutorial
-:page-product: // platform
-:page-categories: // Enterprise 
+:page-product:  platform
+:page-categories:  Enterprise 
 :page-lang: java 
-:page-enterprise: // true
-:page-est-time: // 10 mins
-:description: // In this tutorial, you will examine the operations of a CP-enabled Hazelcast Platform cluster, then work with the CPMap data structure using the Hazelcast CLC.
+:page-enterprise:  true
+:page-est-time:  10 mins
+:description:  In this tutorial, you will examine the operations of a CP-enabled Hazelcast Platform cluster, then work with the CPMap data structure using the Hazelcast CLC.
 
 {description}
 
